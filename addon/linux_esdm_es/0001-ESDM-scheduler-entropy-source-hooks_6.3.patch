@@ -13,21 +13,19 @@ noop.
 Signed-off-by: Stephan Mueller <smueller@chronox.de>
 ---
  drivers/misc/Makefile      |  1 +
- drivers/misc/esdm_sched.c  | 40 ++++++++++++++++++++++++++++++++++++++
- include/linux/esdm_sched.h | 20 +++++++++++++++++++
+ drivers/misc/esdm_sched.c  | 40 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/esdm_sched.h | 20 ++++++++++++++++++++
  kernel/sched/core.c        |  3 +++
  4 files changed, 64 insertions(+)
- create mode 100644 drivers/misc/esdm_sched.c
- create mode 100644 include/linux/esdm_sched.h
 
 diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index 70e800e9127f..e613b47631cb 100644
+index 56de43943cd5..1cac9618a55a 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -60,3 +60,4 @@ obj-$(CONFIG_XILINX_SDFEC)	+= xilinx_sdfec.o
- obj-$(CONFIG_HISI_HIKEY_USB)	+= hisi_hikey_usb.o
- obj-$(CONFIG_HI6421V600_IRQ)	+= hi6421v600-irq.o
- obj-$(CONFIG_OPEN_DICE)		+= open-dice.o
+@@ -65,3 +65,4 @@ obj-$(CONFIG_GP_PCI1XXXX)	+= mchp_pci1xxxx/
+ obj-$(CONFIG_VCPU_STALL_DETECTOR)	+= vcpu_stall_detector.o
+ obj-$(CONFIG_TMR_MANAGER)      += xilinx_tmr_manager.o
+ obj-$(CONFIG_TMR_INJECT)	+= xilinx_tmr_inject.o
 +obj-y				+= esdm_sched.o
 diff --git a/drivers/misc/esdm_sched.c b/drivers/misc/esdm_sched.c
 new file mode 100644
@@ -102,7 +100,7 @@ index 000000000000..f5935eca193a
 +
 +#endif /* _ESDM_SCHED_H */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index bfa7452ca92e..0aa8cc46d5f6 100644
+index 0d18c3969f90..b590db889be1 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6,6 +6,7 @@
@@ -113,7 +111,7 @@ index bfa7452ca92e..0aa8cc46d5f6 100644
  #include <linux/highmem.h>
  #include <linux/hrtimer_api.h>
  #include <linux/ktime_api.h>
-@@ -3580,6 +3581,8 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
+@@ -3645,6 +3646,8 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
  {
  	struct rq *rq;
  
@@ -122,6 +120,3 @@ index bfa7452ca92e..0aa8cc46d5f6 100644
  	if (!schedstat_enabled())
  		return;
  
--- 
-2.36.1
-
