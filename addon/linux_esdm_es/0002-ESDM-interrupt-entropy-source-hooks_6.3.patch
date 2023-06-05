@@ -18,27 +18,25 @@ a while.
 
 Signed-off-by: Stephan Mueller <smueller@chronox.de>
 ---
- drivers/char/random.c    | 14 ++++++++++---
+ drivers/char/random.c    | 14 +++++++++++---
  drivers/misc/Makefile    |  1 +
- drivers/misc/esdm_irq.c  | 43 ++++++++++++++++++++++++++++++++++++++++
- include/linux/esdm_irq.h | 20 +++++++++++++++++++
+ drivers/misc/esdm_irq.c  | 43 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/esdm_irq.h | 20 ++++++++++++++++++++
  4 files changed, 75 insertions(+), 3 deletions(-)
- create mode 100644 drivers/misc/esdm_irq.c
- create mode 100644 include/linux/esdm_irq.h
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 655e327d425e..208d77725d30 100644
+index 253f2ddb8913..e62f3d80e7ac 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -53,6 +53,7 @@
- #include <linux/uaccess.h>
+@@ -54,6 +54,7 @@
  #include <linux/suspend.h>
  #include <linux/siphash.h>
+ #include <linux/sched/isolation.h>
 +#include <linux/esdm_irq.h>
  #include <crypto/chacha.h>
  #include <crypto/blake2s.h>
- #include <asm/processor.h>
-@@ -997,11 +998,18 @@ static void mix_interrupt_randomness(struct work_struct *work)
+ #include <asm/archrandom.h>
+@@ -1088,11 +1089,18 @@ static void mix_interrupt_randomness(struct timer_list *work)
  void add_interrupt_randomness(int irq)
  {
  	enum { MIX_INFLIGHT = 1U << 31 };
@@ -61,12 +59,12 @@ index 655e327d425e..208d77725d30 100644
  		 (regs ? instruction_pointer(regs) : _RET_IP_) ^ swab(irq));
  	new_count = ++fast_pool->count;
 diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index e613b47631cb..2de8e296a996 100644
+index 1cac9618a55a..69810d82ef60 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -61,3 +61,4 @@ obj-$(CONFIG_HISI_HIKEY_USB)	+= hisi_hikey_usb.o
- obj-$(CONFIG_HI6421V600_IRQ)	+= hi6421v600-irq.o
- obj-$(CONFIG_OPEN_DICE)		+= open-dice.o
+@@ -66,3 +66,4 @@ obj-$(CONFIG_VCPU_STALL_DETECTOR)	+= vcpu_stall_detector.o
+ obj-$(CONFIG_TMR_MANAGER)      += xilinx_tmr_manager.o
+ obj-$(CONFIG_TMR_INJECT)	+= xilinx_tmr_inject.o
  obj-y				+= esdm_sched.o
 +obj-y				+= esdm_irq.o
 diff --git a/drivers/misc/esdm_irq.c b/drivers/misc/esdm_irq.c
@@ -144,6 +142,3 @@ index 000000000000..172f4572eb45
 +void esdm_irq_unregister(esdm_irq_randomness_t func);
 +
 +#endif /* _ESDM_IRQ_H */
--- 
-2.36.1
-
