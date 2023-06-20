@@ -34,6 +34,10 @@ conf_data.set('ESDM_HASH_SHA512', get_option('hash_sha512').enabled())
 conf_data.set('ESDM_HASH_SHA3_512', get_option('hash_sha3_512').enabled())
 conf_data.set('ESDM_GNUTLS', get_option('gnutls').enabled())
 
+if (get_option('maxrandombits') >= 0)
+	conf_data.set('ESDM_DRNG_MAX_WITHOUT_RESEED', get_option('maxrandombits'))
+endif
+
 # This option currently is not configurable!
 conf_data.set('CONFIG_ESDM_USE_PTHREAD', true)
 conf_data.set('THREADING_MAX_THREADS', get_option('threading_max_threads'))

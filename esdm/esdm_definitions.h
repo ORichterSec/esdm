@@ -57,6 +57,11 @@
 #define ESDM_DRNG_RESEED_THRESH		(1<<20)
 
 /*
+ * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
+ */
+#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<13)
+
+/*
  * Maximum DRNG generation operations without reseed having full entropy
  * This value defines the absolute maximum value of DRNG generation operations
  * without a reseed holding full entropy. ESDM_DRNG_RESEED_THRESH is the

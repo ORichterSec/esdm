@@ -136,6 +136,15 @@ void esdm_config_es_hwrand_entropy_rate_set(uint32_t ent);
 uint32_t esdm_config_es_hwrand_entropy_rate(void);
 
 /**
+ * @brief DRNG Manager configuration: get maximum value of requested bits
+ * without reseed
+ *
+ * @return Maximum allowed number of requested bits without reseed.
+ */
+
+uint32_t esdm_config_drng_max_requests_bits(void);
+
+/**
  * @brief DRNG Manager configuration: get maximum value without successful
  *	  reseed
  *

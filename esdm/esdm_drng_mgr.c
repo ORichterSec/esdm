@@ -129,6 +129,7 @@ void esdm_drng_reset(struct esdm_drng *drng)
 	/* Ensure reseed during next call */
 	atomic_set(&drng->requests, 1);
 	atomic_set(&drng->requests_since_fully_seeded, 0);
+	atomic_set(&drng->requests_bits, 0);
 	drng->last_seeded = time(NULL);
 	drng->fully_seeded = false;
 	/* Do not set force, as this flag is used for the emergency reseeding */
@@ -362,11 +363,16 @@ void esdm_drng_inject(struct esdm_drng *drng,
 		       "%s DRNG stats since last seeding: %lu secs; generate calls: %d\n",
 		       drng_type, esdm_time_after_now(drng->last_seeded), gc);
 
-		/* Count the numbers of generate ops since last fully seeded */
-		if (fully_seeded)
+		/* Count the numbers of generate ops and bits since last fully seeded */
+		if (fully_seeded){
 			atomic_set(&drng->requests_since_fully_seeded, 0);
-		else
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset requested_bits (%zd) --> 0 on node (%zd)\n", drng->requests_bits, esdm_curr_node());
+			atomic_set(&drng->requests_bits, 0);
+		}
+		else{
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "drng->fully_seeded == false\n");
 			atomic_add(&drng->requests_since_fully_seeded, gc);
+		}
 
 		drng->last_seeded = time(NULL);
 		atomic_set(&drng->requests, ESDM_DRNG_RESEED_THRESH);
@@ -603,8 +609,22 @@ out:
 	esdm_drng_put_instances();
 }
 
+void esdm_drng_add_requests_bits(struct esdm_drng *drng, int val)
+{
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "current node: (%zd) | adding requests bits current: %zd | add val: %zd | cast of val: %zd\n",
+											esdm_curr_node(),drng->requests_bits, val, (uint32_t) val);
+	atomic_add(&drng->requests_bits, val);
+}
+
+//todo: here check for variable
 static bool esdm_drng_must_reseed(struct esdm_drng *drng)
 {
+	uint32_t requested_bits = atomic_read_u32(&drng->requests_bits);
+	if(requested_bits >= esdm_config_drng_max_requests_bits()){
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "must reseed because limit for requested bits (%zd/%zd) are reached\n", requested_bits, esdm_config_drng_max_requests_bits());
+		// atomic_set(&drng->requests_bits, esdm_config_drng_max_requests_bits());
+		return true;
+	}
 	return (atomic_dec_and_test(&drng->requests) ||
 		drng->force_reseed ||
 		esdm_time_after_now(drng->last_seeded +
@@ -638,19 +658,22 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
 	outbuflen = min_size(outbuflen, SSIZE_MAX);
 
 	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
-	    esdm_config_drng_max_wo_reseed())
+	    esdm_config_drng_max_wo_reseed() || atomic_read_u32(&drng->requests_bits) == esdm_config_drng_max_requests_bits())
 		esdm_unset_fully_seeded(drng);
 
 	while (outbuflen) {
 		uint32_t todo = min_uint32((uint32_t)outbuflen,
 					   ESDM_DRNG_MAX_REQSIZE);
+		// todo = min_uint32(todo, atomic_read_u32(&drng->requests_bits) >> 3);
 		ssize_t ret;
 
 		/* In normal operation, check whether to reseed */
 		if (!pr && esdm_drng_must_reseed(drng)) {
 			if (!esdm_pool_trylock()) {
+				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "lock failed set force_reseed\n");
 				drng->force_reseed = true;
 			} else {
+				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "lock successfull reseed drng\n");
 				esdm_drng_seed(drng);
 				esdm_pool_unlock();
 			}
@@ -698,6 +721,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
 			       ret);
 			return -EFAULT;
 		}
+		
+		esdm_drng_add_requests_bits(drng, ret<<3);
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG,
+					"current node: (%zd) | requests_bits = (%zd) out of max_requests_bits = (%zd) | todo: (%zd) | ret: (%zd) <--------\n",
+					esdm_curr_node(),
+					atomic_read_u32(&drng->requests_bits),
+					EDSM_DRNG_MAX_BITS_WITHOUT_RESEED,
+					todo,
+					ret
+					);
 		processed += ret;
 		outbuflen -= (size_t)ret;
 

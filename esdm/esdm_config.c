@@ -37,6 +37,7 @@ struct esdm_config {
 	uint32_t esdm_es_krng_entropy_rate_bits;
 	uint32_t esdm_es_sched_entropy_rate_bits;
 	uint32_t esdm_es_hwrand_entropy_rate_bits;
+	uint32_t esdm_drgn_max_requests_bits;
 	uint32_t esdm_drng_max_wo_reseed;
 	uint32_t esdm_max_nodes;
 	enum esdm_config_force_fips force_fips;
@@ -80,6 +81,11 @@ static struct esdm_config esdm_config = {
 	 * See documentation of ESDM_HWRAND_ENTROPY_RATE
 	 */
 	.esdm_es_hwrand_entropy_rate_bits = ESDM_HWRAND_ENTROPY_RATE,
+
+	/*
+	 * See documentation of ESDM_HWRAND_ENTROPY_RATE
+	 */
+	.esdm_drgn_max_requests_bits = EDSM_DRNG_MAX_BITS_WITHOUT_RESEED,
 
 	/*
 	 * See documentation of ESDM_DRNG_MAX_WITHOUT_RESEED.
@@ -203,6 +209,13 @@ void esdm_config_es_hwrand_entropy_rate_set(uint32_t ent)
 	esdm_config.esdm_es_hwrand_entropy_rate_bits = val;
 	esdm_es_add_entropy();
 }
+
+DSO_PUBLIC
+uint32_t esdm_config_drng_max_requests_bits(void)
+{
+	return esdm_config.esdm_drgn_max_requests_bits;
+}
+
 
 DSO_PUBLIC
 uint32_t esdm_config_drng_max_wo_reseed(void)

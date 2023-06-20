@@ -63,8 +63,9 @@
  *
  * This value is allowed to be changed.
  */
+#ifndef ESDM_DRNG_MAX_WITHOUT_RESEED
 #define ESDM_DRNG_MAX_WITHOUT_RESEED	(1<<30)
-
+#endif
 /*
  * Min required seed entropy is 128 bits covering the minimum entropy
  * requirement of SP800-131A and the German BSI's TR02102.

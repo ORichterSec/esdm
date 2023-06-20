@@ -42,6 +42,7 @@ struct esdm_drng {
 	const struct esdm_drng_cb *drng_cb;	/* DRNG callbacks */
 	const struct esdm_hash_cb *hash_cb;	/* Hash callbacks */
 	atomic_t requests;			/* Number of DRNG requests */
+	atomic_t requests_bits; /*Number of requested bit since last reseed*/
 	atomic_t requests_since_fully_seeded;	/* Number DRNG requests since
 						 * last fully seeded
 						 */
@@ -59,6 +60,7 @@ struct esdm_drng {
 	.drng_cb			= d_cb, \
 	.hash_cb			= h_cb, \
 	.requests			= ATOMIC_INIT(ESDM_DRNG_RESEED_THRESH),\
+	.requests_bits		= ATOMIC_INIT(0), \
 	.requests_since_fully_seeded	= ATOMIC_INIT(0), \
 	.last_seeded			= 0, \
 	.fully_seeded			= false, \
@@ -81,6 +83,7 @@ void esdm_drng_inject(struct esdm_drng *drng,
 		      bool fully_seeded, const char *drng_type);
 void esdm_drng_seed_work(void);
 void esdm_force_fully_seeded(void);
+void esdm_drng_add_requests_bits(struct esdm_drng *drng, int val);
 
 static inline uint32_t esdm_compress_osr(void)
 {
