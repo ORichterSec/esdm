@@ -35,7 +35,7 @@ conf_data.set('ESDM_HASH_SHA3_512', get_option('hash_sha3_512').enabled())
 conf_data.set('ESDM_GNUTLS', get_option('gnutls').enabled())
 
 if (get_option('maxrandombits') >= 0)
-	conf_data.set('EDSM_DRNG_MAX_BITS_WITHOUT_RESEED', get_option('maxrandombits'))
+	conf_data.set('EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE', get_option('maxrandombits'))
 endif
 
 # This option currently is not configurable!
