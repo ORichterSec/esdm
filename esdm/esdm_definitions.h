@@ -59,7 +59,9 @@
 /*
  * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
  */
+#ifndef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED
 #define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<13)
+#endif
 
 /*
  * Maximum DRNG generation operations without reseed having full entropy
