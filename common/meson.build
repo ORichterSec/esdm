@@ -38,6 +38,10 @@ if (get_option('maxrandombits') >= 0)
 	conf_data.set('EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE', get_option('maxrandombits'))
 endif
 
+if (get_option('esdm_drop_bits') >= 0)
+	conf_data.set('ESDM_DRNG_DROP_BITS_VAL', get_option('esdm_drop_bits'))
+endif
+
 # This option currently is not configurable!
 conf_data.set('CONFIG_ESDM_USE_PTHREAD', true)
 conf_data.set('THREADING_MAX_THREADS', get_option('threading_max_threads'))

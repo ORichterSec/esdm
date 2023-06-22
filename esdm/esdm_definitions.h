@@ -59,12 +59,22 @@
 /*
  * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
  */
-#ifndef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE
-#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<17)
-#else
+#ifdef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE
 #define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE)
+#else
+#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<17)
 #endif
 
+/*
+ * Specified amount of bits that are to be dropped after start, before bits
+ * are sent to serve a request
+ */
+//todo
+#ifdef ESDM_DRNG_DROP_BITS_VAL
+#define ESDM_DRNG_DROP_BITS_VAL 5000
+#else
+#define ESDM_DRNG_DROP_BITS_VAL 0
+#endif
 /*
  * Maximum DRNG generation operations without reseed having full entropy
  * This value defines the absolute maximum value of DRNG generation operations

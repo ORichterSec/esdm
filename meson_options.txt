@@ -298,6 +298,9 @@ option('gnutls', type: 'feature', value: 'disabled',
 option('maxrandombits', type: 'integer', value: 3,
        description:  'todo description - change number')
 
+option('esdm_drop_bits', type: 'integer', value: 0,
+       description:  'todo description - change number')
+
 ################################################################################
 # Linux Interface Configuration
 ################################################################################
