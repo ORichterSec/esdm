@@ -394,6 +394,8 @@ void esdm_drng_inject(struct esdm_drng *drng,
 static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
 					 const char *drng_type)
 {
+	//todo drop first #ESDM_DRNG_DROP_BITS_VAL bits of incoming entropy before using it for seeding the drng
+
 	struct entropy_buf seedbuf __aligned(ESDM_KCAPI_ALIGN),
 			   collected_seedbuf;
 	uint32_t collected_entropy = 0;
@@ -408,6 +410,30 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
 	 * valgrind.
 	 */
 	memset(&seedbuf, 0, sizeof(seedbuf));
+
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "hit function esdm_drng_seed_es_nolock | drng->dropped_bits_at_start == %zd <------------\n", drng->dropped_bits_at_start);
+	//drop the bits first if this is the first time seeding the drng
+	if(!drng->dropped_bits_at_start) {
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "test\n");
+		struct entropy_buf dropbuf;
+		uint32_t dropped_entropy = 0;
+		while(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
+			//fetch the entropy into our dropbuf
+			esdm_fill_seed_buffer(&dropbuf, ESDM_DRNG_DROP_BITS_VAL, true);
+			uint32_t current_ent;
+			current_ent = esdm_entropy_rate_eb(&dropbuf);
+			dropped_entropy += current_ent;
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping entropy before using it to seed --> dropped: (%zd)/(%zd)bits | current_entropy:(%zd) currently on core: (%zd)\n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL, current_ent, esdm_curr_node());
+		}
+		if(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "we still have not dropped enough entropy somehow\n");
+		}else if(dropped_entropy > ESDM_DRNG_DROP_BITS_VAL){
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "somehow we dropped more entropy then we needed\n");
+		}else if(dropped_entropy == ESDM_DRNG_DROP_BITS_VAL){
+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping worked\n");
+		}
+		drng->dropped_bits_at_start = true;
+	}
 
 	do {
 		/* Count the number of ES which delivered entropy */
@@ -616,7 +642,6 @@ void esdm_drng_add_requests_bits(struct esdm_drng *drng, int val)
 	atomic_add(&drng->requests_bits, val);
 }
 
-//todo: here check for variable
 static bool esdm_drng_must_reseed(struct esdm_drng *drng)
 {
 	uint32_t requested_bits = atomic_read_u32(&drng->requests_bits);
@@ -661,41 +686,10 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
 	    esdm_config_drng_max_wo_reseed() || atomic_read_u32(&drng->requests_bits) == esdm_config_drng_max_requests_bits())
 		esdm_unset_fully_seeded(drng);
 
-	//drop first 5k
-	if(!drng->dropped_bits_at_start){
-		ssize_t dropped = 0;
-		ssize_t current_ret = 0;
-		while(dropped < ESDM_DRNG_DROP_BITS_VAL){
-			
-			uint8_t tmp[ESDM_DRNG_MAX_REQSIZE];
-			size_t drop_amount = min_size(ESDM_DRNG_MAX_REQSIZE, ESDM_DRNG_DROP_BITS_VAL - dropped);
-			current_ret = drng->drng_cb->drng_generate(drng->drng, tmp, drop_amount);
-			dropped += current_ret;
-			logger(LOGGER_DEBUG2,LOGGER_C_DRNG, "dropping: (%zd)| got: (%zd) | status: (%zd)/(%zd) bits dropped | buffersize:%zd | drng*: (%zd)\n", drop_amount, current_ret, dropped, ESDM_DRNG_DROP_BITS_VAL,sizeof(tmp), drng);
-			// for(size_t i = 0; i < sizeof(tmp); i++){
-			// 	logger(LOGGER_DEBUG2,LOGGER_C_DRNG, "%hhx", tmp[i]);
-			// }
-			// logger(LOGGER_DEBUG2,LOGGER_C_DRNG, "\n");
-		}
-		if(dropped < ESDM_DRNG_DROP_BITS_VAL){
-			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error. somehow we still dropped less than required\n");
-		}
-		else if(dropped > ESDM_DRNG_DROP_BITS_VAL){
-			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error. we dropped more than we wanted\n");
-		}
-		else{
-			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping worked!\n");
-		}
-		drng->dropped_bits_at_start = true;
-	}
-
 	while (outbuflen) {
 		uint32_t todo = min_uint32((uint32_t)outbuflen,
 					   ESDM_DRNG_MAX_REQSIZE);
-		// todo = min_uint32(todo, atomic_read_u32(&drng->requests_bits) >> 3);
 		ssize_t ret;
-		if(drng->dropped_bits_at_start)
-		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "\n");
 		/* In normal operation, check whether to reseed */
 		if (!pr && esdm_drng_must_reseed(drng)) {
 			if (!esdm_pool_trylock()) {

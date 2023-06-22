@@ -66,14 +66,10 @@
 #endif
 
 /*
- * Specified amount of bits that are to be dropped after start, before bits
- * are sent to serve a request
+ * Specified amount of bits that are to be dropped before they are used for seeding the dngr
  */
-//todo
-#ifdef ESDM_DRNG_DROP_BITS_VAL
+#ifndef ESDM_DRNG_DROP_BITS_VAL
 #define ESDM_DRNG_DROP_BITS_VAL 5000
-#else
-#define ESDM_DRNG_DROP_BITS_VAL 0
 #endif
 /*
  * Maximum DRNG generation operations without reseed having full entropy
