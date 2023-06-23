@@ -295,10 +295,10 @@ option('hash_sha3_512', type: 'feature', value: 'disabled',
 option('gnutls', type: 'feature', value: 'disabled',
        description: 'Enable GnuTLS backend to provide cryptographic primitives')
 
-option('maxrandombits', type: 'integer', value: 3,
+option('maxrandombits', type: 'integer', value: 17,
        description:  'todo description - change number')
 
-option('esdm_drop_bits', type: 'integer', value: 0,
+option('esdm_drop_bits', type: 'integer', value: 4000,
        description:  'todo description - change number')
 
 ################################################################################
