@@ -43,6 +43,7 @@ struct esdm_drng {
 	const struct esdm_hash_cb *hash_cb;	/* Hash callbacks */
 	atomic_t requests;			/* Number of DRNG requests */
 	atomic_t requests_bits; /*Number of requested bit since last reseed*/
+	atomic_t dropped_bits; /*Number of dropped bits*/
 	atomic_t requests_since_fully_seeded;	/* Number DRNG requests since
 						 * last fully seeded
 						 */
@@ -62,6 +63,7 @@ struct esdm_drng {
 	.hash_cb			= h_cb, \
 	.requests			= ATOMIC_INIT(ESDM_DRNG_RESEED_THRESH),\
 	.requests_bits		= ATOMIC_INIT(0), \
+	.dropped_bits		= ATOMIC_INIT(0), \
 	.requests_since_fully_seeded	= ATOMIC_INIT(0), \
 	.last_seeded			= 0, \
 	.fully_seeded			= false, \

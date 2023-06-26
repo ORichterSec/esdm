@@ -415,26 +415,31 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
 	//drop the bits first if this is the first time seeding the drng
 	if(!drng->dropped_bits_at_start) {
 		struct entropy_buf dropbuf;
-		uint32_t dropped_entropy = 0;
+		uint32_t dropped_entropy = atomic_read_u32(&drng->dropped_bits);
 		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Dropped entropy set to:%zd | ESDM_DRNG_DROP_BITS_VAL: %zd \n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL);
 		while(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
 			//fetch the entropy into our dropbuf
 			// esdm_fill_seed_buffer(&dropbuf, ESDM_DRNG_DROP_BITS_VAL, true);
-			uint32_t todo = min_uint32(ESDM_DRNG_DROP_BITS_VAL - dropped_entropy, esdm_avail_entropy());
+			uint32_t todo = min_uint32(ESDM_DRNG_DROP_BITS_VAL - dropped_entropy, esdm_security_strength());
 			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "avail_entropy:(%zd), security_streng:(%zd) | todo: (%zd)\n", esdm_avail_entropy(), esdm_security_strength(), todo);
 			//todo: this does retrieve more bits than we would want right now
-			esdm_fill_seed_buffer(&dropbuf, todo, drng->force_reseed);
+			esdm_fill_seed_buffer(&dropbuf, todo, true);
 			uint32_t current_ent;
 			current_ent = esdm_entropy_rate_eb(&dropbuf);
 			dropped_entropy += current_ent;
 			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping entropy before using it to seed --> dropped: (%zd)/(%zd)bits | current_entropy:(%zd) currently on core: (%zd)\n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL, current_ent, esdm_curr_node());
 		
-		//todo maybe return her with 0 if the required ammount is not dropped yet
-		//and we have no further entropy available
+			//todo maybe return her with 0 if the required ammount is not dropped yet
+			//and we have no further entropy available
+			if(current_ent == 0){
+				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "no more entropy returning: %zd\n",current_ent);
+				atomic_set(&drng->dropped_bits, dropped_entropy);
+				return;
+			}
 
-		if(esdm_avail_entropy() < esdm_security_strength()){
-			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error while dropping bits: (avail_entropy)%zd < (security_strength)%zd\n", esdm_avail_entropy(), esdm_security_strength());
-		}
+			if(esdm_avail_entropy() < esdm_security_strength()){
+				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error while dropping bits: (avail_entropy)%zd < (security_strength)%zd\n", esdm_avail_entropy(), esdm_security_strength());
+			}
 		}
 		if(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
 			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "we still have not dropped enough entropy somehow\n");

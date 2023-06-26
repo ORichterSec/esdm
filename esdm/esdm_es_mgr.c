@@ -737,7 +737,7 @@ void esdm_fill_seed_buffer(struct entropy_buf *eb, uint32_t requested_bits,
 	    state->esdm_fully_seeded && (esdm_avail_entropy() < req_ent)) {
 		for_each_esdm_es(i)
 			eb->entropy_es[i].e_bits = 0;
-
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset all the entropy bits in our entropy buffer\n");
 		goto wakeup;
 	}
 
@@ -745,6 +745,7 @@ void esdm_fill_seed_buffer(struct entropy_buf *eb, uint32_t requested_bits,
 	for_each_esdm_es(i) {
 		esdm_es[i]->get_ent(&eb->entropy_es[i], requested_bits,
 				    state->esdm_fully_seeded);
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "in esdm_fill_seed_buffer: set %zd to %zd\n", i, eb->entropy_es[i].e_bits);
 	}
 
 wakeup:
