@@ -61,6 +61,7 @@ DSO_PUBLIC
 ssize_t esdm_rpcc_get_random_bytes_full_int(uint8_t *buf, size_t buflen,
 					    void *int_data)
 {
+	logger(LOGGER_DEBUG2,LOGGER_C_RPC,"called esdm_rpcc_get_random_bytes_full_int in service-rpc/client<*********************\n");
 	GetRandomBytesFullRequest msg = GET_RANDOM_BYTES_FULL_REQUEST__INIT;
 	struct esdm_rpc_client_connection *rpc_conn = NULL;
 	struct esdm_get_random_bytes_full_buf buffer;
@@ -98,6 +99,7 @@ ssize_t esdm_rpcc_get_random_bytes_full_int(uint8_t *buf, size_t buflen,
 
 out:
 	esdm_rpcc_put_unpriv_service(rpc_conn);
+	logger(LOGGER_DEBUG2,LOGGER_C_RPC,"exited esdm_rpcc_get_random_bytes_full_int in service-rpc/client<**********************\n");
 	return (ret < 0) ? ret : (ssize_t)orig_buflen;
 }
 

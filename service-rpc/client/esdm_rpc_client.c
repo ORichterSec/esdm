@@ -69,6 +69,7 @@ static void esdm_fini_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 static int
 esdm_connect_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_RPC, "entered esdm_connect_proto_service \n");
 	const char *socketname = rpc_conn->socketname;
 	struct timespec ts = { .tv_sec = 0, .tv_nsec = 1U<<28 };
 	struct timeval tv = { .tv_sec = 0, .tv_usec = (ts.tv_nsec)>>10 };
@@ -91,7 +92,7 @@ esdm_connect_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 			       "ESDM server interface %s not available\n",
 			       socketname);
 		}
-
+		logger(LOGGER_DEBUG2, LOGGER_C_RPC, "exited esdm_connect_proto_service: \n");
 		return -errsv;
 	}
 
@@ -108,6 +109,7 @@ esdm_connect_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 
 		logger(LOGGER_ERR, LOGGER_C_RPC,
 			"Error creating socket: %s\n", strerror(errsv));
+		logger(LOGGER_DEBUG2, LOGGER_C_RPC, "exited esdm_connect_proto_service: rpc_conn->fd < 0\n");
 		return -errsv;
 	}
 
@@ -121,6 +123,7 @@ esdm_connect_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 		logger(LOGGER_ERR, LOGGER_C_RPC,
 		       "Error setting timeout on socket: %s\n",
 		       strerror(errsv));
+		logger(LOGGER_DEBUG2, LOGGER_C_RPC, "exited esdm_connect_proto_service: line 117 setsockopt(rpc_conn->fd, SOL_SOCKET, SO_RCVTIMEO...\n");
 		return -errsv;
 	}
 
@@ -148,7 +151,7 @@ esdm_connect_proto_service(struct esdm_rpc_client_connection *rpc_conn)
 		       "Connection attempt using socket %s failed\n",
 		       socketname);
 	}
-
+	logger(LOGGER_DEBUG2, LOGGER_C_RPC, "exited esdm_connect_proto_service\n");
 	return -errsv;
 }
 

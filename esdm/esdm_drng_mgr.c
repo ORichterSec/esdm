@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "build_bug_on.h"
 #include "config.h"
@@ -395,6 +396,7 @@ void esdm_drng_inject(struct esdm_drng *drng,
 static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
 					 const char *drng_type)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "entered esdm_drng_seed_es_nolock<------------\n");
 	struct entropy_buf seedbuf __aligned(ESDM_KCAPI_ALIGN),
 			   collected_seedbuf;
 	uint32_t collected_entropy = 0;
@@ -467,6 +469,7 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
 
 	memset_secure(&seedbuf, 0, sizeof(seedbuf));
 
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exiting esdm_drng_seed_es_nolock<------------\n");
 	return collected_entropy;
 }
 
@@ -479,6 +482,9 @@ static void esdm_drng_seed_es(struct esdm_drng *drng)
 
 static void esdm_drng_seed(struct esdm_drng *drng)
 {
+	timer_t now;
+	time(now);
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "entered esdm_drng_seed<------------%zd\n", now);
 	BUILD_BUG_ON(ESDM_MIN_SEED_ENTROPY_BITS >
 		     ESDM_DRNG_SECURITY_STRENGTH_BITS);
 
@@ -486,6 +492,8 @@ static void esdm_drng_seed(struct esdm_drng *drng)
 	esdm_drng_seed_es(drng);
 	/* (Re-)Seed atomic DRNG from regular DRNG */
 	esdm_drng_atomic_seed_drng(drng);
+	time(now);
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exiting esdm_drng_seed<------------%zd\n", now);
 }
 
 static void esdm_drng_seed_work_one(struct esdm_drng *drng, uint32_t node)
@@ -640,6 +648,7 @@ static bool esdm_drng_must_reseed(struct esdm_drng *drng)
 static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
 			     size_t outbuflen)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "entered esdm_drng_get<------------\n");
 	ssize_t processed = 0;
 	bool pr = (drng == &esdm_drng_pr) ? true : false;
 
@@ -889,6 +898,7 @@ DSO_PUBLIC
 ssize_t esdm_get_seed(uint64_t *buf, size_t nbytes,
 		      enum esdm_get_seed_flags flags)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "entering esdm_get_seed<~~~~~~~~~~~~~\n");
 	struct entropy_buf *eb =
 		(struct entropy_buf *)(buf + 2);
 	uint64_t buflen = sizeof(struct entropy_buf) + 2 * sizeof(uint64_t);
@@ -897,28 +907,35 @@ ssize_t esdm_get_seed(uint64_t *buf, size_t nbytes,
 
 	/* Ensure buffer is aligned as required */
 	BUILD_BUG_ON(sizeof(buflen) < ESDM_KCAPI_ALIGN);
-	if (nbytes < sizeof(buflen))
+	if (nbytes < sizeof(buflen)){
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exited esdm_get_seed:nbytes < sizeof(buflen)<~~~~~~~~~~~~~\n");
 		return -EINVAL;
+	}
 
 	/* Write buffer size into first word */
 	buf[0] = buflen;
-	if (nbytes < buflen)
+	if (nbytes < buflen){
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exited esdm_get_seed:nbytes < buflen<~~~~~~~~~~~~~\n");
 		return -EMSGSIZE;
+	}
 
 	ret = esdm_drng_sleep_while_not_all_nodes_seeded(
 		flags & ESDM_GET_SEED_NONBLOCK);
-	if (ret < 0)
+	if (ret < 0){
+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exited esdm_get_seed:ret (%d) < 0<~~~~~~~~~~~~~\n", ret);
 		return ret;
+	}
 
 	/* Try to get the pool lock and sleep on it to get it. */
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "before pool_lock<<<<\n");
 	esdm_pool_lock();
-
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "after pool_lock<<<<\n");
 	/* If an ESDM DRNG becomes unseeded, give this DRNG precedence. */
 	if (!esdm_pool_all_nodes_seeded_get()) {
 		esdm_pool_unlock();
 		return 0;
 	}
-
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "before for loop>>>><<<<\n");
 	/*
 	 * Try to get seed data - a rarely used busyloop is cheaper than a wait
 	 * queue that is constantly woken up by the hot code path of
@@ -943,12 +960,13 @@ ssize_t esdm_get_seed(uint64_t *buf, size_t nbytes,
 
 		nanosleep(&poll_ts, NULL);
 	}
-
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "after for loop>>>><<<<\n");
 	esdm_pool_unlock();
 
 	/* Write collected entropy size into second word */
 	buf[1] = collected_bits;
 
+	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "exited esdm_get_seed<~~~~~~~~~~~~~\n");
 	return (ssize_t)buflen;
 }
 

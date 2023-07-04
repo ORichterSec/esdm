@@ -56,6 +56,7 @@ DSO_PUBLIC
 ssize_t esdm_rpcc_get_seed_int(uint8_t *buf, size_t buflen, unsigned int flags,
 			       void *int_data)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_RPC, "entered esdm_rpcc_get_seed_int <......................\n");
 	GetSeedRequest msg = GET_SEED_REQUEST__INIT;
 	struct esdm_rpc_client_connection *rpc_conn = NULL;
 	struct esdm_get_seed_buf buffer;
@@ -92,6 +93,7 @@ ssize_t esdm_rpcc_get_seed_int(uint8_t *buf, size_t buflen, unsigned int flags,
 
 out:
 	esdm_rpcc_put_unpriv_service(rpc_conn);
+	logger(LOGGER_DEBUG2, LOGGER_C_RPC, "exited esdm_rpcc_get_seed_int : ret = %d, noblock = %d <......................\n", ret, noblock);
 	return ret;
 }
 

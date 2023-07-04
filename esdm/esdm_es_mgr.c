@@ -417,6 +417,7 @@ static uint32_t esdm_avail_entropy_thresh(void)
 bool esdm_fully_seeded(bool fully_seeded, uint32_t collected_entropy,
 		       struct entropy_buf *eb)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_ES, "entering fully_seeded\n");
 	/* AIS20/31 NTG.1: two entropy sources with each delivering 220 bits */
 	if (esdm_ntg1_2022_compliant()) {
 		uint32_t i, result = 0,
@@ -428,9 +429,11 @@ bool esdm_fully_seeded(bool fully_seeded, uint32_t collected_entropy,
 				   ESDM_AIS2031_NPTRNG_MIN_ENTROPY;
 		}
 
+		logger(LOGGER_DEBUG2, LOGGER_C_ES, "exiting fully_seeded:ntg1_2022_compliant==true %d\n", result);
 		return (result >= 2);
 	}
 
+	logger(LOGGER_DEBUG2, LOGGER_C_ES, "exiting fully_seeded\n");
 	return (collected_entropy >= esdm_get_seed_entropy_osr(fully_seeded));
 }
 
@@ -555,14 +558,19 @@ static uint32_t esdm_init_entropy_level(bool fully_seeded)
  */
 void esdm_init_ops(struct entropy_buf *eb)
 {
+	logger(LOGGER_DEBUG2, LOGGER_C_ES, "entering init_ops\n");
 	struct esdm_state *state = &esdm_state;
 	uint32_t i, requested_bits, seed_bits = 0;
 
-	if (state->esdm_operational)
+	if (state->esdm_operational){
+		logger(LOGGER_DEBUG2, LOGGER_C_ES, "exiting init_ops:state->esdm_operational == true\n");
 		return;
-
-	requested_bits = esdm_init_entropy_level(
-						state->all_online_nodes_seeded);
+	}
+	requested_bits = esdm_ntg1_2022_compliant() ?
+		/* Approximation so that two ES should deliver 220 bits each */
+		(esdm_avail_entropy() + ESDM_AIS2031_NPTRNG_MIN_ENTROPY) :
+		/* Apply SP800-90C oversampling if applicable */
+		esdm_get_seed_entropy_osr(state->all_online_nodes_seeded);
 
 	if (eb) {
 		seed_bits = esdm_entropy_rate_eb(eb);
@@ -605,6 +613,7 @@ void esdm_init_ops(struct entropy_buf *eb)
 			esdm_set_entropy_thresh(ESDM_MIN_SEED_ENTROPY_BITS);
 		}
 	}
+	logger(LOGGER_DEBUG2, LOGGER_C_ES, "exiting init_ops\n");
 }
 
 int esdm_es_mgr_reinitialize(void)

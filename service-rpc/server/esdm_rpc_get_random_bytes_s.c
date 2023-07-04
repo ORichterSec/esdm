@@ -22,12 +22,14 @@
 #include "esdm_rpc_service.h"
 #include "memset_secure.h"
 #include "unpriv_access.pb-c.h"
+#include "logger.h"
 
 void esdm_rpc_get_random_bytes(UnprivAccess_Service *service,
 			       const GetRandomBytesRequest *request,
 			       GetRandomBytesResponse_Closure closure,
 			       void *closure_data)
 {
+	logger(LOGGER_DEBUG2,LOGGER_C_RPC, "called esdm_rpc_get_random_bytes<++++++++++++++++++++++\n");
 	GetRandomBytesResponse response = GET_RANDOM_BYTES_RESPONSE__INIT;
 	uint8_t rndval[ESDM_RPC_MAX_DATA];
 	(void) service;
@@ -48,4 +50,5 @@ void esdm_rpc_get_random_bytes(UnprivAccess_Service *service,
 
 		memset_secure(rndval, 0, sizeof(rndval));
 	}
+	logger(LOGGER_DEBUG2,LOGGER_C_RPC, "exited esdm_rpc_get_random_bytes<++++++++++++++++++++++\n");
 }

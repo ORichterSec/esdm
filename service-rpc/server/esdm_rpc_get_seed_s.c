@@ -35,6 +35,7 @@ void esdm_rpc_get_seed(UnprivAccess_Service *service,
 		       GetSeedResponse_Closure closure,
 		       void *closure_data)
 {
+	logger(LOGGER_DEBUG2,LOGGER_C_RPC, "called esdm_rpc_get_seed<++++++++++++++++++++++\n");
 	GetSeedResponse response = GET_SEED_RESPONSE__INIT;
 	uint64_t rndval[ESDM_RPC_MAX_DATA / sizeof(uint64_t)];
 	(void) service;
@@ -62,4 +63,6 @@ void esdm_rpc_get_seed(UnprivAccess_Service *service,
 
 		memset_secure(rndval, 0, sizeof(rndval));
 	}
+		logger(LOGGER_DEBUG2,LOGGER_C_RPC, "exited esdm_rpc_get_seed<++++++++++++++++++++++\n");
+
 }
